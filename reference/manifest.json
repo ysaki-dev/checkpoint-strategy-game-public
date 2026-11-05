@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "file": "core/config.ts",
+      "sha256": "c56aa19befdb0cd91507571dc6b35a3124c20295c21e5ca5aaad2d5ff8e50c1a"
+    },
+    {
+      "file": "core/map.ts",
+      "sha256": "5945709af186198dcc261acd30a749282138c4fac2eda00ecf423953dfe8bbbc"
+    },
+    {
+      "file": "core/game.ts",
+      "sha256": "ffbc497c88f01574c1681990dd71ec393e68a148c68365d6c526ae20d3bf7951"
+    },
+    {
+      "file": "core/visibility.ts",
+      "sha256": "7f5f3a38a9c22d39ac93c1f743cee454942a7e6e7c5eed67565cc5321c242c5f"
+    },
+    {
+      "file": "core/secrets.ts",
+      "sha256": "a3ddf9d61d54128bf3b23a18472195904f98430b54b9f473ccd8de8e810ae45e"
+    },
+    {
+      "file": "core/bot.ts",
+      "sha256": "e96cc3cd9ea5e78a80ce89b2ef6360994fcdde42423797d241237651aae0cf08"
+    },
+    {
+      "file": "policy/expression.ts",
+      "sha256": "be52c607c3980daa373528418d5230cc6e7efb669af48c6dc899a28ba6d4b342"
+    },
+    {
+      "file": "policy/policy.ts",
+      "sha256": "65c28ba496be3fbee84764eeb7ed1b13624a1e7c7aea6a3d87e61cca5ef4c1c8"
+    }
+  ]
+}
