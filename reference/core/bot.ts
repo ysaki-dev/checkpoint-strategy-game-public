@@ -42,7 +42,7 @@ export class Bot {
     const bonus=world.bonuses.find(b=>b.start<=done&&b.end>done)?.cp===i;
     let value=pointsAt(done,bonus)/(travel+wait+C.capture);
     // Visible opponents can change the bot's decision, hidden positions cannot.
-    if(view.cps[i].owner===0||view.cps[i].contested)value*=.08;
+    if(view.cps[i].owner===0||view.cps[i].priority===0||view.cps[i].contested)value*=.08;
     const seen=this.observation;
     if(seen&&predicted!==null){
      const age=now-seen.time,confidence=Math.max(0,1-age/C.botMemory),enemyArrival=distance(seen.point,cp)/C.speed;

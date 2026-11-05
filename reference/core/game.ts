@@ -2,15 +2,16 @@ import { CONFIG as C } from './config.ts';
 import { type World,type Point,terrain,passable,distance,checkpointWindow,waterHigh } from './map.ts';
 import { vision,type RuleMode } from './visibility.ts';
 export interface Player extends Point {score:number; input:Point; inputAt:number}
-export interface Checkpoint {cooldownUntil:number; owner:number|null; since:number; contested:boolean}
+export interface Checkpoint {cooldownUntil:number; owner:number|null; since:number; contested:boolean; priority:number|null}
 export interface Capture {time:number;cp:number;player:number;points:number;scores:number[];secretPoints?:number;secretScores?:number[]}
 export interface Frame {time:number;positions:Point[]}
 export class Game {
  elapsed=-C.prepare; phase:'select'|'prepare'|'playing'|'finished'='prepare'; high=false;
  players:Player[]; cps:Checkpoint[]; captures:Capture[]=[]; frames:Frame[]=[];
+ private arrivals:(number|null)[][];
  private secretTargets:(number|null)[]=[null,null]; private secretScores=[0,0];
  winner:number|null=null; reason='time'; private frameAt=-1;
- constructor(public world:World,public readonly mode:RuleMode='standard'){this.high=world.initialHigh;this.players=[0,1].map(()=>({...world.start,score:0,input:{x:0,y:0},inputAt:-Infinity}));this.cps=world.cps.map(()=>({cooldownUntil:0,owner:null,since:0,contested:false}));}
+ constructor(public world:World,public readonly mode:RuleMode='standard'){this.high=world.initialHigh;this.players=[0,1].map(()=>({...world.start,score:0,input:{x:0,y:0},inputAt:-Infinity}));this.cps=world.cps.map(()=>({cooldownUntil:0,owner:null,since:0,contested:false,priority:null}));this.arrivals=world.cps.map(()=>[null,null]);}
  chooseSecret(id:number,cp:number|null){if(this.mode!=='secret'||this.phase!=='prepare'||this.elapsed>=0||!Number.isInteger(id)||id<0||id>1||(cp!==null&&(!Number.isInteger(cp)||cp<0||cp>=this.world.cps.length)))return false;this.secretTargets[id]=cp;return true;}
  input(id:number,x:number,y:number){if(!Number.isFinite(x)||!Number.isFinite(y))return;const n=Math.hypot(x,y);this.players[id].input=n>1?{x:x/n,y:y/n}:{x,y};this.players[id].inputAt=this.elapsed;}
  stop(id:number){this.players[id].input={x:0,y:0};}
@@ -27,10 +28,16 @@ export class Game {
  }
  if(this.elapsed<0)return;
  // At 300.000 the match closes after processing completions at that exact tick.
- for(let i=0;i<this.cps.length;i++){const cp=this.cps[i];if(!checkpointWindow(this.world,i,this.elapsed,cp.cooldownUntil).active){cp.owner=null;cp.contested=false;continue;}
- const inside=this.players.map((p,j)=>distance(p,this.world.cps[i])<=C.captureRadius?j:-1).filter(j=>j>=0);
- if(cp.owner!==null&&!inside.includes(cp.owner)){cp.owner=null;cp.contested=false;}
- if(cp.owner===null){cp.contested=inside.length>1;if(inside.length===1){cp.owner=inside[0];cp.since=this.elapsed;}}
+ for(let i=0;i<this.cps.length;i++){
+ const cp=this.cps[i],arrivals=this.arrivals[i];
+ // Remember continuous entry even while closed/cooling. A departure forfeits that place.
+ for(let id=0;id<this.players.length;id++)arrivals[id]=distance(this.players[id],this.world.cps[i])<=C.captureRadius?(arrivals[id]??this.elapsed):null;
+ const present=arrivals.flatMap((time,id)=>time===null?[]:[{id,time}]).sort((a,b)=>a.time-b.time);
+ cp.priority=present.length===0||present.length>1&&present[0].time===present[1].time?null:present[0].id;
+ cp.contested=present.length>1&&cp.priority===null;
+ if(!checkpointWindow(this.world,i,this.elapsed,cp.cooldownUntil).active){cp.owner=null;continue;}
+ // Five seconds start only on activation or transfer, never during the wait.
+ if(cp.owner!==cp.priority){cp.owner=cp.priority;cp.since=this.elapsed;}
  if(cp.owner!==null&&this.elapsed-cp.since>=C.capture-1e-8){const id=cp.owner,points=pointsAt(this.elapsed,this.bonus().cp===i);this.players[id].score+=points;const extra=this.mode==='secret'&&this.secretTargets[id]===i?C.secretPoints:0;this.secretScores[id]+=extra;this.captures.push({time:this.elapsed,cp:i,player:id,points,scores:this.players.map(p=>p.score),...(this.mode==='secret'?{secretPoints:extra,secretScores:[...this.secretScores]}:{})});cp.cooldownUntil=this.elapsed+C.cooldown;cp.owner=null;cp.contested=false;}
  }
  if(this.elapsed-this.frameAt>=.2-1e-8){this.frames.push({time:this.elapsed,positions:this.players.map(p=>({x:p.x,y:p.y}))});this.frameAt=this.elapsed;}
@@ -44,7 +51,7 @@ export class Game {
  // Never expose an opponent's private increment through capture history or score snapshots.
  const captures=this.captures.map(c=>({time:c.time,cp:c.cp,player:c.player,points:scoresHidden?null:c.points,scores:scoresHidden?null:[...c.scores],...(done&&this.mode==='secret'?{secretPoints:c.secretPoints}:{}),...(done&&c.secretScores?{secretScores:[...c.secretScores]}:{})}));
  return {mode:this.mode,phase:this.phase,elapsed:this.elapsed,high:this.high,scoresHidden,scores:scoresHidden?null:done?publicScores.map((n,i)=>n+this.secretScores[i]):publicScores,publicScores:scoresHidden?null:publicScores,selfSecret:this.mode==='secret'?{cp:this.secretTargets[id],points:scoresHidden?null:this.secretScores[id]}:null,vision:visibility,self:{x:this.players[id].x,y:this.players[id].y},enemy:visible?{x:this.players[enemy].x,y:this.players[enemy].y}:null,
- cps:this.cps.map((c,i)=>({...checkpointWindow(this.world,i,this.elapsed,c.cooldownUntil),cooldownUntil:c.cooldownUntil,owner:c.owner===id||visible?c.owner:null,progress:c.owner===id||visible?c.owner===null?0:Math.min(1,(this.elapsed-c.since)/C.capture):0,contested:c.contested&&visible})),captures,winner:this.winner,reason:this.reason,
+ cps:this.cps.map((c,i)=>({...checkpointWindow(this.world,i,this.elapsed,c.cooldownUntil),cooldownUntil:c.cooldownUntil,priority:c.priority===id||visible?c.priority:null,owner:c.owner===id||visible?c.owner:null,progress:c.owner===id||visible?c.owner===null?0:Math.min(1,(this.elapsed-c.since)/C.capture):0,contested:c.contested&&visible})),captures,winner:this.winner,reason:this.reason,
  ...(done?{replay:{mode:this.mode,frames:this.frames,captures:this.captures.map(c=>({...c,scores:[...c.scores],...(c.secretScores?{secretScores:[...c.secretScores]}:{})})),world:this.world,secretTargets:[...this.secretTargets],secretScores:[...this.secretScores]}}:{})};}
 }
 export function pointsAt(time:number,bonus:boolean){const phase=time<C.phaseBoundaries[0]?0:time<C.phaseBoundaries[1]?1:2;return C.points[phase][bonus?1:0];}

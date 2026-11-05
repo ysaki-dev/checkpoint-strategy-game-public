@@ -3,7 +3,7 @@
   "files": [
     {
       "file": "core/config.ts",
-      "sha256": "c56aa19befdb0cd91507571dc6b35a3124c20295c21e5ca5aaad2d5ff8e50c1a"
+      "sha256": "08699306f58b92137218a391078d141e50ac2b4f6f9d5fc077463a1cc889a539"
     },
     {
       "file": "core/map.ts",
@@ -11,7 +11,7 @@
     },
     {
       "file": "core/game.ts",
-      "sha256": "ffbc497c88f01574c1681990dd71ec393e68a148c68365d6c526ae20d3bf7951"
+      "sha256": "d977edb8878491890c4996a0551e257c0aef001da9cba9f004f5255bee3273b0"
     },
     {
       "file": "core/visibility.ts",
@@ -23,7 +23,7 @@
     },
     {
       "file": "core/bot.ts",
-      "sha256": "e96cc3cd9ea5e78a80ce89b2ef6360994fcdde42423797d241237651aae0cf08"
+      "sha256": "a743174c2bca272bc3e06ef53c6d62053494e47338caee9de567cc8c48538e42"
     },
     {
       "file": "policy/expression.ts",
@@ -31,7 +31,7 @@
     },
     {
       "file": "policy/policy.ts",
-      "sha256": "b780e56bc005831a78b8795a7df6e5c25d54cf4eacbd0fef72688d063da59a81"
+      "sha256": "b0ffc44096825dd1fedbe5dbe43bd8579490b9cc0230802a7134d0adc4743594"
     },
     {
       "file": "policy/network.ts",
@@ -39,7 +39,11 @@
     },
     {
       "file": "policy/expert.ts",
-      "sha256": "e069764e0bd1627cc553b68ddcceb022e34d8359fe7e59a6c4f3d2ceb8ce8021"
+      "sha256": "ebf63e9b34a5a8d8a102c84c1ad06cca606adee63302d132a2b1ca7ab3108d33"
+    },
+    {
+      "file": "policy/help.ts",
+      "sha256": "de5755b0e2275b1434bd57bacdfa3912ca23fc863acc0a8fe6eaaec620e4497e"
     },
     {
       "file": "policy/models/expert.json",
@@ -48,6 +52,10 @@
     {
       "file": "policy/models/expert-report.json",
       "sha256": "9f07ca4e8fbfae200af538b5223ec605dc102742abfb7c33a98a5eacfd9ba91a"
+    },
+    {
+      "file": "policy/models/expert-current-report.json",
+      "sha256": "3da12c41c4125558af85cb39fad694071b1e14a6fedfdc0b3be237342697b7da"
     }
   ]
 }

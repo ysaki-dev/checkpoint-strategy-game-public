@@ -1,6 +1,6 @@
 /** Seconds, tiles and half-point integers. All gameplay tuning lives here. */
 export const CONFIG = {
-  seed: null as number | null, waterEventCount: 2,
+  rulesVersion: 'waiting-priority-v2', seed: null as number | null, waterEventCount: 2,
   secretHillAreas: 5, secretForestPatches: 42,
   maxRivers: 3, fordTiles: 5, botDecision: .75, botMemory: 4,
   width: 48, height: 32, prepare: 30, duration: 300, capture: 5, cooldown: 30,
