@@ -1,0 +1,5 @@
+export const INPUTS=['gain','my_eta','wait','occupied','capturing','is_secret','arrival_advantage','enemy_heading','same_target','remaining','efficiency','is_cp'] as const;
+export interface Network {version:1;hidden:number;w1:number[][];b1:number[];w2:number[];b2:number}
+export function vector(f:Record<string,number>){return [f.gain/4,Math.min(f.my_eta,80)/40,Math.min(f.wait,80)/40,f.occupied,f.capturing,f.is_secret,f.arrival_advantage,f.enemy_heading*(1-f.turn_rate),f.same_target,f.remaining/300,5*f.gain/(5+f.my_eta+f.wait),f.is_cp];}
+export function predict(n:Network,x:number[]){let out=n.b2;for(let j=0;j<n.hidden;j++){let sum=n.b1[j];for(let k=0;k<x.length;k++)sum+=n.w1[j][k]*x[k];out+=n.w2[j]*Math.tanh(sum);}return out;}
+export function validateNetwork(n:Network){if(n.version!==1||n.hidden<1||n.hidden>64||n.w1.length!==n.hidden||n.b1.length!==n.hidden||n.w2.length!==n.hidden||n.w1.some(r=>r.length!==INPUTS.length)||![...n.w1.flat(),...n.b1,...n.w2,n.b2].every(Number.isFinite))throw Error('Invalid expert model');}

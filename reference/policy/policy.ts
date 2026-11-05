@@ -23,7 +23,7 @@ export class FormulaBot{
  target='';lastError='';decisions=0;
  private route:Point[]=[];private nextDecision=-Infinity;private targetSince=0;private lastHigh=false;
  private seen:{point:Point;time:number;velocity:Point}|null=null;private turns=0;private observations=0;
- constructor(public readonly policy:Policy,private readonly id:number){}
+ constructor(public readonly policy:Policy,private readonly id:number,private readonly scorer?:((features:Record<string,number>)=>number)){}
  private observe(v:View){if(!v.enemy)return;const prev=this.seen,dt=prev?v.elapsed-prev.time:0;let velocity={x:0,y:0};if(prev&&dt>0&&dt<=.5){velocity={x:(v.enemy.x-prev.point.x)/dt,y:(v.enemy.y-prev.point.y)/dt};const a=Math.hypot(prev.velocity.x,prev.velocity.y),b=Math.hypot(velocity.x,velocity.y);if(a>.2&&b>.2){this.observations++;if((prev.velocity.x*velocity.x+prev.velocity.y*velocity.y)/(a*b)<.5)this.turns++;}}this.seen={point:{...v.enemy},time:v.elapsed,velocity};}
  update(w:World,v:View):Point{
   if(v.phase!=='playing')return {x:0,y:0};this.observe(v);
@@ -40,7 +40,7 @@ export class FormulaBot{
    w.cps.forEach((p,i)=>add('cp:'+i,'cp',p,i));w.hillAreas.forEach((p,i)=>add('hill:'+i,'hill',p));add('wait','wait',v.self);
    const budget={left:8192},current=candidates.find(c=>c.key===this.target);let allow=true;this.lastError='';
    try{if(current&&!highChanged)allow=evaluate(this.policy.switchWhen,current.features,budget)!==0;}catch(e){this.lastError=String((e as Error).message);allow=true;}
-   if(allow){let chosen:Candidate|undefined,best=-Infinity;for(const c of candidates){try{const value=evaluate(this.policy.formula,c.features,budget);if(value>best){best=value;chosen=c;}}catch(e){this.lastError=(e as Error).message;}}this.decisions++;if(chosen){if(chosen.key!==this.target||highChanged||!this.route.length){if(chosen.key!==this.target)this.targetSince=v.elapsed;this.route=[{x:Math.floor(v.self.x)+.5,y:Math.floor(v.self.y)+.5},...chosen.path];}this.target=chosen.key;}else{this.target='wait';this.route=[];}}
+   if(allow){let chosen:Candidate|undefined,best=-Infinity;for(const c of candidates){try{const value=this.scorer?this.scorer(c.features):evaluate(this.policy.formula,c.features,budget);if(!Number.isFinite(value))throw Error('評価結果が有限の数値ではありません');if(value>best){best=value;chosen=c;}}catch(e){this.lastError=(e as Error).message;}}this.decisions++;if(chosen){if(chosen.key!==this.target||highChanged||!this.route.length){if(chosen.key!==this.target)this.targetSince=v.elapsed;this.route=[{x:Math.floor(v.self.x)+.5,y:Math.floor(v.self.y)+.5},...chosen.path];}this.target=chosen.key;}else{this.target='wait';this.route=[];}}
    else if(current&&!this.route.length&&distance(v.self,current.point)>.15)this.route=[{x:Math.floor(v.self.x)+.5,y:Math.floor(v.self.y)+.5},...current.path];
   }
   if(this.target==='wait')return {x:0,y:0};while(this.route.length&&distance(v.self,this.route[0])<.1)this.route.shift();const next=this.route[0];if(!next)return {x:0,y:0};if(!passable(w,next,v.high)){this.nextDecision=-Infinity;this.route=[];return {x:0,y:0};}const step=C.speed*C.tick*(terrain(w,v.self)==='road'?C.roadMultiplier:1);return {x:(next.x-v.self.x)/step,y:(next.y-v.self.y)/step};
